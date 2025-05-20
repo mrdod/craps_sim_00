@@ -34,6 +34,17 @@
             font-size: 24px;
             color: #2ecc71;
         }
+        .shortcuts {
+            font-size: 14px;
+            color: #bdc3c7;
+            margin-top: 5px;
+        }
+        .shortcuts span {
+            background-color: #34495e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 2px;
+        }
         .dice-display {
             font-size: 48px;
             text-align: center;
@@ -218,7 +229,12 @@
         <div class="header">
             <h1 style="color: #ecf0f1;">Craps Simulator</h1>
             <div class="header-controls">
-                <div class="bankroll">Bankroll: $<span id="bankroll">1000.00</span></div>
+                <div>
+                    <div class="bankroll">Bankroll: $<span id="bankroll">1000.00</span></div>
+                    <div class="shortcuts">
+                        Roll: <span>Space</span> | Repeat Bet: <span>R</span>
+                    </div>
+                </div>
                 <button id="rollButton" onclick="rollDice()">Roll Dice</button>
             </div>
         </div>
@@ -290,6 +306,18 @@
         let gameActive = true;
         let activeBets = new Map();
         let betHistory = [];
+        let lastBet = null;
+
+        // Add keyboard event listener
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') {
+                event.preventDefault(); // Prevent page scroll
+                rollDice();
+            } else if (event.code === 'KeyR') {
+                event.preventDefault();
+                repeatLastBet();
+            }
+        });
 
         function addToHistory(message, isWin, roll) {
             const historyItem = {
@@ -457,9 +485,46 @@
             }
         }
 
+        async function repeatLastBet() {
+            if (!lastBet) {
+                document.getElementById('message').textContent = 'No previous bet to repeat';
+                return;
+            }
+            
+            try {
+                console.log('Repeating last bet:', lastBet);
+                const response = await fetch('/bet', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(lastBet)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                const state = await response.json();
+                console.log('Received state:', state);
+                updateUI(state);
+            } catch (error) {
+                console.error('Error repeating bet:', error);
+                document.getElementById('message').textContent = `Error: ${error.message}`;
+            }
+        }
+
         async function placeBet(betType) {
             const amountInput = event.target.parentElement.querySelector('.bet-amount');
             const amount = parseFloat(amountInput.value);
+            
+            // Store the bet for potential repeat
+            lastBet = {
+                type: betType,
+                amount: amount
+            };
             
             try {
                 console.log('Placing bet:', betType, amount);
@@ -469,10 +534,7 @@
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        type: betType,
-                        amount: amount
-                    })
+                    body: JSON.stringify(lastBet)
                 });
                 
                 if (!response.ok) {

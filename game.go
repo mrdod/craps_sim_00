@@ -157,13 +157,13 @@ func (g *GameState) processBets() {
 			}
 		case "field":
 			if g.LastRoll == 2 {
-				g.Bankroll += g.Bets[i].Amount * 2
+				g.Bankroll += g.Bets[i].Amount*2 + g.Bets[i].Amount
 				g.Bets[i].IsActive = false
 			} else if g.LastRoll == 12 {
-				g.Bankroll += g.Bets[i].Amount * 3
+				g.Bankroll += g.Bets[i].Amount*3 + g.Bets[i].Amount
 				g.Bets[i].IsActive = false
 			} else if g.LastRoll == 3 || g.LastRoll == 4 || g.LastRoll == 9 || g.LastRoll == 10 || g.LastRoll == 11 {
-				g.Bankroll += g.Bets[i].Amount
+				g.Bankroll += g.Bets[i].Amount + g.Bets[i].Amount
 				g.Bets[i].IsActive = false
 			} else {
 				g.Bets[i].IsActive = false
